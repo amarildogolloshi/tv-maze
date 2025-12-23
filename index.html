@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TV Maze</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header><h1>TV Maze</h1></header>
+
+  <canvas id="game" width="900" height="900" aria-label="Maze Game"></canvas>
+
+  <div id="hud" role="group" aria-label="Controls">
+
+    <!-- LINE 1: New + Restart (one line) -->
+    <div class="hud-row" id="row-actions">
+      <button class="btn" id="regen"   type="button">New Maze</button>
+      <button class="btn" id="restart" type="button">Restart Level</button>
+    </div>
+
+    <!-- LINE 2: Level selector (alone on its own line) -->
+    <div class="hud-row" id="row-level">
+      <label for="levelSelect">Level:</label>
+      <select id="levelSelect" class="btn" style="min-width: 220px;"></select>
+    </div>
+
+    <!-- LINE 3: One-line Timer + Target -->
+    <div class="hud-row" id="row-time">
+      <span id="timeTarget" class="hud-line" aria-live="polite"></span>
+    </div>
+
+    <!-- LINE 4: Status -->
+    <div class="hud-row" id="row-status">
+      <span id="status">Use Arrow keys / D‑pad / Gamepad</span>
+    </div>
+  </div>
+
+  <footer style="margin:12px; opacity:0.7; font-size:clamp(12px, 2.5vw, 16px);">
+    Tips: Timer starts on your first move. Choose a level from the dropdown. “New Maze” regenerates the selected level.
+  </footer>
+
+  <script src="maze.js"></script>
+</body>
