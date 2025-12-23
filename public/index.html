@@ -5,39 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TV Maze</title>
-  <style>
-    :root {
-      --bg: #0f1215; --fg: #e8eaed; --border: #4b5563;
-      --accent: #2ecc71; --player: #e74c3c; --teal: #00bcd4; --orange: #ff9800;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; background: var(--bg); color: var(--fg);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      display: flex; flex-direction: column; align-items: center;
-    }
-    header { text-align: center; margin: 16px 0 4px; }
-    h1 { font-size: clamp(24px, 5vw, 48px); margin: 0 8px; }
-    #game {
-      border: 3px solid var(--border);
-      width: 90vmin; height: 90vmin; max-width: 1080px; max-height: 1080px;
-      background: #0b0e11;
-    }
-    #hud {
-      display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: center;
-      margin: 10px; font-size: clamp(16px, 3vw, 22px);
-    }
-    .btn {
-      padding: 10px 16px; font-size: 1em;
-      background: #1f2937; color: var(--fg);
-      border: 2px solid var(--border); border-radius: 8px; cursor: pointer;
-    }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn:focus { outline: 3px solid #93c5fd; }
-    #status, #timer, #level, #target { min-width: 180px; text-align: center; }
-    footer { margin: 12px; opacity: 0.7; font-size: clamp(12px, 2.5vw, 16px); }
-  </style>
-  <!-- Load JS AFTER DOM -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header><h1>TV Maze</h1></header>
@@ -45,20 +13,33 @@
   <canvas id="game" width="900" height="900" aria-label="Maze Game"></canvas>
 
   <div id="hud" role="group" aria-label="Controls">
-    <button class="btn" id="regen">New Maze</button>
-    <button class="btn" id="smaller">Smaller</button>
-    <button class="btn" id="bigger">Bigger</button>
-    <button class="btn" id="restart">Restart Level</button>
-    <button class="btn" id="next" disabled>Next Level ▶</button>
-    <span id="level">Level: —</span>
-    <span id="target">Target: —</span>
-    <span id="status">Use Arrow keys / D‑pad / Gamepad</span>
-    <span id="timer">Time: 00:00.000</span>
+
+    <!-- LINE 1: New + Restart (one line) -->
+    <div class="hud-row" id="row-actions">
+      <button class="btn" id="regen"   type="button">New Maze</button>
+      <button class="btn" id="restart" type="button">Restart Level</button>
+    </div>
+
+    <!-- LINE 2: Level selector (alone on its own line) -->
+    <div class="hud-row" id="row-level">
+      <label for="levelSelect">Level:</label>
+      <select id="levelSelect" class="btn" style="min-width: 220px;"></select>
+    </div>
+
+    <!-- LINE 3: One-line Timer + Target -->
+    <div class="hud-row" id="row-time">
+      <span id="timeTarget" class="hud-line" aria-live="polite"></span>
+    </div>
+
+    <!-- LINE 4: Status -->
+    <div class="hud-row" id="row-status">
+      <span id="status">Use Arrow keys / D‑pad / Gamepad</span>
+    </div>
   </div>
 
-  <footer>
-    Tips: Timer starts on your first move. Clear the maze to unlock Next Level.
+  <footer style="margin:12px; opacity:0.7; font-size:clamp(12px, 2.5vw, 16px);">
+    Tips: Timer starts on your first move. Choose a level from the dropdown. “New Maze” regenerates the selected level.
   </footer>
 
   <script src="maze.js"></script>
-</</body>
+</body>

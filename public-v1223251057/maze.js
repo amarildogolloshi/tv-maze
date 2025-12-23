@@ -18,6 +18,8 @@ let CELL;
 const canvas      = document.getElementById("game");
 const ctx         = canvas.getContext("2d");
 const statusEl    = document.getElementById("status");
+const levelEl     = document.getElementById("level");   // optional: only if present in HTML
+const targetEl    = document.getElementById("target");
 const levelSelect = document.getElementById("levelSelect");
 
 let grid, player, goal;
@@ -27,9 +29,6 @@ let gameOver = false;
 let trail = [];
 let forwardSegments   = []; // [{from:{x,y}, to:{x,y}}]
 let backtrackSegments = []; // [{from:{x,y}, to:{x,y}}]
-
-// ---------- Saved Maze (for true restart of same layout) ----------
-let savedMaze = null; // 2D array of wall objects {top,right,bottom,left}
 
 // ---------- Timer ----------
 let startTime = null;
@@ -44,26 +43,17 @@ function formatTime(ms) {
   const mmm = total % 1000;
   return `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}.${String(mmm).padStart(3,'0')}`;
 }
-
-// Unified one-line Timer + Target HUD
-function updateTimeTargetDisplay(elapsedMs) {
-  const el = document.getElementById('timeTarget');
-  if (!el) return;
-  const targetMs = LEVELS[currentLevel].targetMs;
-  el.innerHTML = `
-    <span class="label">⏱</span> ${formatTime(elapsedMs)}
-    <span class="label">|</span>
-    <span class="label">🎯 Target:</span> ${formatTime(targetMs)}
-  `;
+function updateTimerDisplay(ms) {
+  const el = document.getElementById('timer');
+  if (el) el.textContent = `Time: ${formatTime(ms)}`;
 }
-
 function startTimer() {
   if (hasStarted) return;
   hasStarted = true;
   startTime = performance.now();
   const tick = () => {
     elapsed = performance.now() - startTime;
-    updateTimeTargetDisplay(elapsed);
+    updateTimerDisplay(elapsed);
     timerId = requestAnimationFrame(tick);
   };
   timerId = requestAnimationFrame(tick);
@@ -71,13 +61,14 @@ function startTimer() {
 function stopTimer() {
   if (timerId) cancelAnimationFrame(timerId);
   timerId = null;
-  updateTimeTargetDisplay(elapsed); // final value
+  updateTimerDisplay(elapsed);
 }
 
 // ---------- Level HUD / Dropdown ----------
 function updateLevelHud() {
-  // Refresh the combined display (elapsed persists unless you restart)
-  updateTimeTargetDisplay(elapsed);
+  const L = LEVELS[currentLevel];
+  if (levelEl) levelEl.textContent = `Level: ${currentLevel + 1}/${LEVELS.length} — ${L.name}`;
+  if (targetEl) targetEl.textContent = `Target: ${formatTime(L.targetMs)}`;
   if (levelSelect) levelSelect.value = String(currentLevel);
 }
 function populateLevelDropdown() {
@@ -102,18 +93,16 @@ function setLevel(idx) {
   COLS = L.cols;
   ROWS = L.rows;
 
+  updateLevelHud();
+
   // Build new grid FIRST so draw won't see a mismatched size
   generateMaze();
 
   // Then (re)fit canvas; safe to draw if it does
   fitCanvas();
-
-  updateLevelHud();
 }
 function restartLevel() {
-  // Old behavior regenerated a new maze; we keep New Maze for that.
-  // Restart Level now restores the SAME layout:
-  restoreSavedMaze();
+  setLevel(currentLevel);
 }
 
 // ---------- Maze cell ----------
@@ -171,60 +160,14 @@ function generateMaze() {
   backtrackSegments = [];
   gameOver = false;
 
-  // Reset timer state + unified HUD
+  // Reset timer state
   hasStarted = false;
   elapsed = 0;
   startTime = null;
-  updateTimeTargetDisplay(0);
-
-  // ---------- Save current maze layout for true restart ----------
-  savedMaze = grid.map(row =>
-    row.map(cell => ({
-      top: cell.walls.top,
-      right: cell.walls.right,
-      bottom: cell.walls.bottom,
-      left: cell.walls.left
-    }))
-  );
+  updateTimerDisplay(0);
 
   draw();
   statusEl.textContent = "Use Arrow keys / D‑pad / Gamepad";
-}
-
-// ---------- Restore SAME MAZE layout (true restart) ----------
-function restoreSavedMaze() {
-  if (!savedMaze) {
-    // If no saved maze yet, just generate and save one
-    generateMaze();
-    statusEl.textContent = "New maze generated (no saved layout yet).";
-    return;
-  }
-
-  // Rebuild grid from saved walls
-  grid = savedMaze.map((row, y) =>
-    row.map((walls, x) => {
-      const c = new Cell(x, y);
-      c.walls = { ...walls };
-      return c;
-    })
-  );
-
-  // Reset player, goal, trail, segments, timer
-  player = { x: 0, y: 0 };
-  goal   = { x: COLS - 1, y: ROWS - 1 };
-  trail = [{ x: player.x, y: player.y }];
-  forwardSegments = [];
-  backtrackSegments = [];
-
-  hasStarted = false;
-  elapsed = 0;
-  startTime = null;
-  updateTimeTargetDisplay(0);
-
-  gameOver = false;
-
-  draw();
-  statusEl.textContent = "Level restarted (same maze layout).";
 }
 
 // ---------- Render ----------
@@ -375,7 +318,7 @@ function checkWin() {
     const beatTarget = elapsed <= L.targetMs;
     const star = beatTarget ? "⭐" : "";
     statusEl.textContent = `You win! ${star} Time: ${formatTime(elapsed)} (Target: ${formatTime(L.targetMs)})`;
-    // User chooses next challenge via dropdown
+    // No "Next Level" logic: user chooses via dropdown
   }
 }
 
@@ -428,14 +371,8 @@ function pollGamepad(ts) {
 requestAnimationFrame(pollGamepad);
 
 // ---------- UI ----------
-document.getElementById("regen")?.addEventListener("click", () => {
-  // New Maze: build a new random layout (and save it)
-  generateMaze();
-});
-document.getElementById("restart")?.addEventListener("click", () => {
-  // Restart Level: restore the SAME maze layout
-  restoreSavedMaze();
-});
+document.getElementById("regen")?.addEventListener("click", () => restartLevel());
+document.getElementById("restart")?.addEventListener("click", restartLevel);
 
 // ---------- Resize handling (keep square) ----------
 function fitCanvas() {
@@ -450,5 +387,5 @@ window.addEventListener("resize", fitCanvas);
 
 // ---------- Init ----------
 populateLevelDropdown();
-updateTimeTargetDisplay(0); // show initial timer/target line
+updateLevelHud();
 fitCanvas();
